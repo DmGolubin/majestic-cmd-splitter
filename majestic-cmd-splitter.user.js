@@ -138,6 +138,42 @@
     .mcs-btn { transition: all 0.2s ease; }
     .mcs-btn:hover { filter: brightness(1.15); transform: translateY(-1px); }
     .mcs-btn:active { transform: translateY(0); }
+    #mcs-autocomplete {
+      position: absolute;
+      bottom: 100%;
+      left: 0;
+      margin-bottom: 4px;
+      display: none;
+      flex-direction: row;
+      gap: 4px;
+      z-index: 40;
+      animation: mcs-badgeIn 0.2s ease;
+    }
+    #mcs-autocomplete.mcs-ac-visible {
+      display: flex;
+    }
+    .mcs-ac-option {
+      background: rgba(96,165,250,0.1);
+      color: #60a5fa;
+      border: 1px solid rgba(96,165,250,0.2);
+      border-radius: 4px;
+      padding: 2px 10px;
+      font-size: 11px;
+      font-family: 'Consolas', 'Courier New', monospace;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+    .mcs-ac-option:hover {
+      background: rgba(96,165,250,0.2);
+      border-color: rgba(96,165,250,0.4);
+    }
+    .mcs-ac-hint {
+      color: #52525b;
+      font-size: 10px;
+      align-self: center;
+      padding: 0 4px;
+    }
     .mcs-close-btn { transition: color 0.2s ease, transform 0.2s ease; }
     .mcs-close-btn:hover { color: #e4e4e7 !important; transform: rotate(90deg); }
     .mcs-delete-btn { transition: all 0.2s ease; opacity: 0; }
@@ -220,6 +256,101 @@
       if (v) violations.push({ line: i, parsed, violation: v });
     }
     return violations;
+  }
+
+  // ── Автозаполнение ──
+  const AUTOCOMPLETE = {
+    setskill: {
+      // После ввода "setskill <id>" предложить варианты для арг 2, и автоподставить арг 3
+      trigger: 2,  // показать когда введено 2 части (cmd + id)
+      options: [
+        { label: 'stamina', fill: 'stamina 100' },
+        { label: 'strength', fill: 'strength 100' },
+      ]
+    }
+  };
+
+  let acPopup = null;
+
+  function ensureAcPopup(textarea) {
+    const wrapper = textarea.parentElement;
+    if (!wrapper) return;
+    let existing = wrapper.querySelector('#mcs-autocomplete');
+    if (existing) { acPopup = existing; return; }
+    wrapper.style.position = 'relative';
+    acPopup = document.createElement('div');
+    acPopup.id = 'mcs-autocomplete';
+    wrapper.appendChild(acPopup);
+  }
+
+  function updateAutocomplete(textarea) {
+    ensureAcPopup(textarea);
+    if (!acPopup) return;
+
+    // Берём только текущую строку (последнюю)
+    const lines = textarea.value.split('\n');
+    const currentLine = lines[lines.length - 1] || '';
+    const parts = currentLine.trim().split(/\s+/);
+    const cmd = (parts[0] || '').toLowerCase();
+
+    const rule = AUTOCOMPLETE[cmd];
+    if (!rule || parts.length !== rule.trigger + 1) {
+      acPopup.classList.remove('mcs-ac-visible');
+      return;
+    }
+
+    // Уже есть больше аргументов чем trigger — не показываем
+    // parts.length === trigger + 1 значит cmd + id введены, ждём следующий арг
+
+    acPopup.innerHTML = '<span class="mcs-ac-hint">Tab:</span>';
+    rule.options.forEach((opt, i) => {
+      const btn = document.createElement('span');
+      btn.className = 'mcs-ac-option';
+      btn.textContent = opt.label;
+      btn.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        applyAutocomplete(textarea, opt.fill);
+      });
+      acPopup.appendChild(btn);
+    });
+    acPopup.classList.add('mcs-ac-visible');
+  }
+
+  function applyAutocomplete(textarea, fill) {
+    const lines = textarea.value.split('\n');
+    const lastLine = lines[lines.length - 1];
+    lines[lines.length - 1] = lastLine.trimEnd() + ' ' + fill;
+
+    const nativeSet = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set;
+    nativeSet.call(textarea, lines.join('\n'));
+    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+    textarea.focus();
+
+    // Курсор в конец
+    const len = textarea.value.length;
+    textarea.setSelectionRange(len, len);
+
+    if (acPopup) acPopup.classList.remove('mcs-ac-visible');
+  }
+
+  function handleAutocompleteKey(e) {
+    if (e.key !== 'Tab') return;
+    const textarea = e.target;
+    if (!textarea || textarea.tagName !== 'TEXTAREA') return;
+    if (!textarea.closest('.console-terminal')) return;
+    if (!acPopup || !acPopup.classList.contains('mcs-ac-visible')) return;
+
+    const lines = textarea.value.split('\n');
+    const currentLine = lines[lines.length - 1] || '';
+    const parts = currentLine.trim().split(/\s+/);
+    const cmd = (parts[0] || '').toLowerCase();
+    const rule = AUTOCOMPLETE[cmd];
+    if (!rule || !rule.options.length) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+    // Tab выбирает первый вариант
+    applyAutocomplete(textarea, rule.options[0].fill);
   }
 
   // ── Бейдж ──
@@ -464,6 +595,7 @@
     const violations = analyzeText(textarea.value);
     showBadge(textarea, violations);
     updateSumBadge(textarea);
+    updateAutocomplete(textarea);
   }
 
   // ── Настройки ──
@@ -625,6 +757,7 @@
       const violations = analyzeText(val);
       showBadge(ta, violations);
       updateSumBadge(ta);
+      updateAutocomplete(ta);
     }
   }
 
@@ -633,6 +766,7 @@
 
     // Capture-фаза keydown — перехватываем до React
     document.addEventListener('keydown', handleKeydown, true);
+    document.addEventListener('keydown', handleAutocompleteKey, true);
 
     // Input event как дополнение
     document.addEventListener('input', handleInput, true);
