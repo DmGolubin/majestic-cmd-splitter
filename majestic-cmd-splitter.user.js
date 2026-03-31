@@ -140,7 +140,7 @@
     .mcs-btn:active { transform: translateY(0); }
     #mcs-autocomplete {
       position: absolute;
-      top: -28px;
+      top: 0;
       left: 0;
       display: none;
       flex-direction: row;
@@ -148,6 +148,8 @@
       align-items: center;
       z-index: 50;
       pointer-events: auto;
+      height: 24px;
+      line-height: 24px;
     }
     #mcs-autocomplete.mcs-ac-visible {
       display: inline-flex;
@@ -317,6 +319,15 @@
       });
       acPopup.appendChild(btn);
     });
+
+    // Позиционируем справа от текста
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const style = getComputedStyle(textarea);
+    ctx.font = style.fontSize + ' ' + style.fontFamily;
+    const textWidth = ctx.measureText(currentLine).width;
+    acPopup.style.left = (textWidth + 8) + 'px';
+
     acPopup.classList.add('mcs-ac-visible');
   }
 
