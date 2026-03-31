@@ -74,20 +74,19 @@
       z-index: 30;
       white-space: nowrap;
       letter-spacing: 0.3px;
-      display: none;
+      opacity: 0;
       background: rgba(96,165,250,0.08);
       color: #60a5fa;
       border: 1px solid rgba(96,165,250,0.15);
       max-width: 60%;
       overflow: hidden;
       text-overflow: ellipsis;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      transform: translateY(4px);
     }
     #mcs-sum-badge.mcs-sum-visible {
-      display: block;
-      animation: mcs-badgeIn 0.25s ease forwards;
-    }
-    #mcs-sum-badge.mcs-sum-hiding {
-      animation: mcs-badgeOut 0.2s ease forwards;
+      opacity: 1;
+      transform: translateY(0);
     }
     .mcs-textarea-warn {
       caret-color: #f87171 !important;
@@ -318,23 +317,20 @@
     const text = textarea.value;
     const lines = text.split('\n').filter(l => l.trim());
     if (lines.length < 2) {
-      sumBadge.className = 'mcs-sum-hiding';
-      setTimeout(() => { sumBadge.className = ''; sumBadge.style.display = 'none'; }, 200);
+      sumBadge.classList.remove('mcs-sum-visible');
       return;
     }
 
     const sums = calcSums(text);
     const entries = Object.entries(sums);
     if (entries.length === 0) {
-      sumBadge.className = 'mcs-sum-hiding';
-      setTimeout(() => { sumBadge.className = ''; sumBadge.style.display = 'none'; }, 200);
+      sumBadge.classList.remove('mcs-sum-visible');
       return;
     }
 
     const parts = entries.map(([key, val]) => `${key}: ${val.toLocaleString()}`);
     sumBadge.textContent = `Σ ${parts.join(' · ')}`;
-    sumBadge.style.display = 'block';
-    sumBadge.className = 'mcs-sum-visible';
+    sumBadge.classList.add('mcs-sum-visible');
   }
 
   function showBadge(textarea, violations) {
