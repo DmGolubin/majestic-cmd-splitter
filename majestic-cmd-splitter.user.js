@@ -294,7 +294,7 @@
     const cmd = (parts[0] || '').toLowerCase();
 
     const rule = AUTOCOMPLETE[cmd];
-    if (!rule || parts.length !== rule.trigger) {
+    if (!rule || parts.length !== rule.trigger || !currentLine.endsWith(' ')) {
       acPopup.classList.remove('mcs-ac-visible');
       return;
     }
