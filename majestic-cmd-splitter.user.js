@@ -62,6 +62,33 @@
     #mcs-info-badge.mcs-hiding {
       animation: mcs-badgeOut 0.2s ease forwards;
     }
+    #mcs-sum-badge {
+      position: absolute;
+      bottom: 8px;
+      left: 8px;
+      font-size: 10px;
+      font-family: 'Consolas', 'Courier New', monospace;
+      padding: 3px 8px;
+      border-radius: 4px;
+      pointer-events: none;
+      z-index: 30;
+      white-space: nowrap;
+      letter-spacing: 0.3px;
+      display: none;
+      background: rgba(96,165,250,0.08);
+      color: #60a5fa;
+      border: 1px solid rgba(96,165,250,0.15);
+      max-width: 60%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    #mcs-sum-badge.mcs-sum-visible {
+      display: block;
+      animation: mcs-badgeIn 0.25s ease forwards;
+    }
+    #mcs-sum-badge.mcs-sum-hiding {
+      animation: mcs-badgeOut 0.2s ease forwards;
+    }
     .mcs-textarea-warn {
       caret-color: #f87171 !important;
     }
@@ -192,6 +219,7 @@
 
   // ── Бейдж ──
   let infoBadge = null;
+  let sumBadge = null;
   let hideTimer = null;
   let bar = null;
 
@@ -245,15 +273,67 @@
     document.querySelectorAll('#mcs-info-badge').forEach(el => {
       if (el !== infoBadge || !document.body.contains(infoBadge)) el.remove();
     });
-
-    if (infoBadge && document.body.contains(infoBadge)) return;
+    document.querySelectorAll('#mcs-sum-badge').forEach(el => {
+      if (el !== sumBadge || !document.body.contains(sumBadge)) el.remove();
+    });
 
     const terminal = textarea.closest('.console-terminal');
     if (!terminal) return;
     terminal.style.position = 'relative';
-    infoBadge = document.createElement('div');
-    infoBadge.id = 'mcs-info-badge';
-    terminal.appendChild(infoBadge);
+
+    if (!infoBadge || !document.body.contains(infoBadge)) {
+      infoBadge = document.createElement('div');
+      infoBadge.id = 'mcs-info-badge';
+      terminal.appendChild(infoBadge);
+    }
+    if (!sumBadge || !document.body.contains(sumBadge)) {
+      sumBadge = document.createElement('div');
+      sumBadge.id = 'mcs-sum-badge';
+      terminal.appendChild(sumBadge);
+    }
+  }
+
+  function calcSums(text) {
+    const lines = text.split('\n');
+    // Группируем по "команда + staticId"
+    const sums = {};
+    for (const line of lines) {
+      const parsed = parseLine(line);
+      if (!parsed) continue;
+      const rule = LIMITS[parsed.cmd];
+      if (!rule) continue;
+      const idx = rule.argIndex;
+      if (parsed.parts.length <= idx) continue;
+      const val = parseInt(parsed.parts[idx], 10);
+      if (isNaN(val)) continue;
+      const staticId = parsed.parts[1] || '?';
+      const key = `${parsed.cmd} #${staticId}`;
+      sums[key] = (sums[key] || 0) + val;
+    }
+    return sums;
+  }
+
+  function updateSumBadge(textarea) {
+    if (!sumBadge) return;
+    const text = textarea.value;
+    const lines = text.split('\n').filter(l => l.trim());
+    if (lines.length < 2) {
+      sumBadge.className = 'mcs-sum-hiding';
+      setTimeout(() => { sumBadge.className = ''; sumBadge.style.display = 'none'; }, 200);
+      return;
+    }
+
+    const sums = calcSums(text);
+    const entries = Object.entries(sums);
+    if (entries.length === 0) {
+      sumBadge.className = 'mcs-sum-hiding';
+      setTimeout(() => { sumBadge.className = ''; sumBadge.style.display = 'none'; }, 200);
+      return;
+    }
+
+    const parts = entries.map(([key, val]) => `${key}: ${val.toLocaleString()}`);
+    sumBadge.textContent = `Σ ${parts.join(' · ')}`;
+    sumBadge.className = 'mcs-sum-visible';
   }
 
   function showBadge(textarea, violations) {
@@ -267,6 +347,7 @@
       }
       textarea.classList.remove('mcs-textarea-warn');
       setBarState(textarea, '');
+      updateSumBadge(textarea);
       return;
     }
 
@@ -300,6 +381,8 @@
 
     infoBadge.textContent = text;
     infoBadge.className = 'mcs-warn';
+
+    updateSumBadge(textarea);
   }
 
   function showSplitBadge(textarea, count) {
@@ -375,6 +458,7 @@
     if (!textarea.closest('.console-terminal')) return;
     const violations = analyzeText(textarea.value);
     showBadge(textarea, violations);
+    updateSumBadge(textarea);
   }
 
   // ── Настройки ──
@@ -535,6 +619,7 @@
       lastTextareaValue = val;
       const violations = analyzeText(val);
       showBadge(ta, violations);
+      updateSumBadge(ta);
     }
   }
 
