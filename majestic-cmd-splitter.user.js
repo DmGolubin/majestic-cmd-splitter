@@ -145,6 +145,7 @@
       align-items: center;
       z-index: 40;
       margin-left: 6px;
+      pointer-events: auto;
     }
     #mcs-autocomplete.mcs-ac-visible {
       display: inline-flex;
@@ -158,6 +159,7 @@
       font-size: 11px;
       font-family: 'Consolas', 'Courier New', monospace;
       cursor: pointer;
+      pointer-events: auto;
       transition: all 0.15s ease;
       white-space: nowrap;
     }
@@ -303,7 +305,7 @@
     // Уже есть больше аргументов чем trigger — не показываем
     // parts.length === trigger + 1 значит cmd + id введены, ждём следующий арг
 
-    acPopup.innerHTML = '<span class="mcs-ac-hint">Tab:</span>';
+    acPopup.innerHTML = '';
     rule.options.forEach((opt, i) => {
       const btn = document.createElement('span');
       btn.className = 'mcs-ac-option';
@@ -332,26 +334,6 @@
     textarea.setSelectionRange(len, len);
 
     if (acPopup) acPopup.classList.remove('mcs-ac-visible');
-  }
-
-  function handleAutocompleteKey(e) {
-    if (e.key !== 'Tab') return;
-    const textarea = e.target;
-    if (!textarea || textarea.tagName !== 'TEXTAREA') return;
-    if (!textarea.closest('.console-terminal')) return;
-    if (!acPopup || !acPopup.classList.contains('mcs-ac-visible')) return;
-
-    const lines = textarea.value.split('\n');
-    const currentLine = lines[lines.length - 1] || '';
-    const parts = currentLine.trim().split(/\s+/);
-    const cmd = (parts[0] || '').toLowerCase();
-    const rule = AUTOCOMPLETE[cmd];
-    if (!rule || !rule.options.length) return;
-
-    e.preventDefault();
-    e.stopPropagation();
-    // Tab выбирает первый вариант
-    applyAutocomplete(textarea, rule.options[0].fill);
   }
 
   // ── Бейдж ──
@@ -767,7 +749,6 @@
 
     // Capture-фаза keydown — перехватываем до React
     document.addEventListener('keydown', handleKeydown, true);
-    document.addEventListener('keydown', handleAutocompleteKey, true);
 
     // Input event как дополнение
     document.addEventListener('input', handleInput, true);
