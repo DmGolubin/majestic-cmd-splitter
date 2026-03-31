@@ -160,6 +160,8 @@
       font-family: 'Consolas', 'Courier New', monospace;
       cursor: pointer;
       pointer-events: auto;
+      user-select: none;
+      -webkit-user-select: none;
       transition: all 0.15s ease;
       white-space: nowrap;
     }
