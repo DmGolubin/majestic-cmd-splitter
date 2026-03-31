@@ -333,6 +333,7 @@
 
     const parts = entries.map(([key, val]) => `${key}: ${val.toLocaleString()}`);
     sumBadge.textContent = `Σ ${parts.join(' · ')}`;
+    sumBadge.style.display = 'block';
     sumBadge.className = 'mcs-sum-visible';
   }
 
@@ -380,6 +381,7 @@
     }
 
     infoBadge.textContent = text;
+    infoBadge.style.display = 'block';
     infoBadge.className = 'mcs-warn';
 
     updateSumBadge(textarea);
@@ -390,6 +392,7 @@
     if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
     textarea.classList.remove('mcs-textarea-warn');
     infoBadge.textContent = `✓ разбито на ${count} команд`;
+    infoBadge.style.display = 'block';
     infoBadge.className = 'mcs-ok';
     hideTimer = setTimeout(() => {
       infoBadge.className = 'mcs-hiding';
