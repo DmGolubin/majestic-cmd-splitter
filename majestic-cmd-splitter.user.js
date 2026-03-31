@@ -139,18 +139,15 @@
     .mcs-btn:hover { filter: brightness(1.15); transform: translateY(-1px); }
     .mcs-btn:active { transform: translateY(0); }
     #mcs-autocomplete {
-      position: absolute;
-      bottom: 100%;
-      left: 0;
-      margin-bottom: 4px;
       display: none;
       flex-direction: row;
       gap: 4px;
+      align-items: center;
       z-index: 40;
-      animation: mcs-badgeIn 0.2s ease;
+      margin-left: 6px;
     }
     #mcs-autocomplete.mcs-ac-visible {
-      display: flex;
+      display: inline-flex;
     }
     .mcs-ac-option {
       background: rgba(96,165,250,0.1);
@@ -273,14 +270,18 @@
   let acPopup = null;
 
   function ensureAcPopup(textarea) {
+    // Вставляем в placeholder-div сайта (серый текст с подсказками аргументов)
     const wrapper = textarea.parentElement;
     if (!wrapper) return;
-    let existing = wrapper.querySelector('#mcs-autocomplete');
+    const placeholderDiv = wrapper.querySelector('.absolute.inset-0');
+    const target = placeholderDiv || wrapper;
+
+    let existing = target.querySelector('#mcs-autocomplete');
     if (existing) { acPopup = existing; return; }
-    wrapper.style.position = 'relative';
-    acPopup = document.createElement('div');
+
+    acPopup = document.createElement('span');
     acPopup.id = 'mcs-autocomplete';
-    wrapper.appendChild(acPopup);
+    target.appendChild(acPopup);
   }
 
   function updateAutocomplete(textarea) {
