@@ -159,6 +159,12 @@
     givechips:  { limit: 100000,   argIndex: 2 },
     takechips:  { limit: 100000,   argIndex: 2 },
     setvip:     { limit: 30,       argIndex: 2 },
+    giveexp:    { limit: 20000,    argIndex: 2 },
+    takeexp:    { limit: 20000,    argIndex: 2 },
+    givecrystals:    { limit: 20000, argIndex: 2 },
+    takecrystals:    { limit: 20000, argIndex: 2 },
+    givespringcoins: { limit: 20000, argIndex: 2 },
+    takespringcoins: { limit: 20000, argIndex: 2 },
   };
 
   function loadLimits() {
