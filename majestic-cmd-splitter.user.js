@@ -262,7 +262,7 @@
   const AUTOCOMPLETE = {
     setskill: {
       // После ввода "setskill <id>" предложить варианты для арг 2, и автоподставить арг 3
-      trigger: 2,  // показать когда введено 2 части (cmd + id)
+      trigger: 2,  // показать когда parts.length === 2 (cmd + id)
       options: [
         { label: 'stamina', fill: 'stamina 100' },
         { label: 'strength', fill: 'strength 100' },
@@ -294,7 +294,7 @@
     const cmd = (parts[0] || '').toLowerCase();
 
     const rule = AUTOCOMPLETE[cmd];
-    if (!rule || parts.length !== rule.trigger + 1) {
+    if (!rule || parts.length !== rule.trigger) {
       acPopup.classList.remove('mcs-ac-visible');
       return;
     }
